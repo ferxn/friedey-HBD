@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Happy Birthday Slideshow Maker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #ffe6e6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input, textarea {
+      padding: 10px;
+      margin: 5px 0 15px 0;
+      width: 300px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: white;
+      width: 350px;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ff9999;
+      text-align: center;
+      position: relative;
+    }
+    .slide-img {
+      max-width: 100%;
+      border-radius: 10px;
+      height: 200px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+    .link-output {
+      margin-top: 20px;
+      word-break: break-all;
+      color: #333;
+      background: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      width: 90%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <h1>อวยพรวันเกิด</h1>
+
+  <input type="text" id="nameInput" placeholder="ชื่อเพื่อน" />
+  <textarea id="msgInput" placeholder="ข้อความอวยพร (ไม่ใส่ก็ได้)" rows="3"></textarea>
+  <textarea id="imgsInput" placeholder="URL รูปหลายรูป คั่นด้วย , (comma)" rows="3"></textarea>
+
+  <button onclick="generateCard()">สร้างลิงก์อวยพร</button>
+
+  <div id="card" class="card" style="display:none;">
+    <h2 id="cardName"></h2>
+    <img id="slideImage" class="slide-img" src="" alt="รูปสไลด์อวยพร" />
+    <p id="cardMsg"></p>
+  </div>
+
+  <div id="linkOutput" class="link-output" style="display:none;"></div>
+
+  <script>
+    let slideIndex = 0;
+    let slideTimer;
+
+    function startSlideShow(images) {
+      if (images.length === 0) return;
+      const slideImage = document.getElementById('slideImage');
+      slideIndex = 0;
+      slideImage.src = images[slideIndex];
+      slideTimer = setInterval(() => {
+        slideIndex = (slideIndex + 1) % images.length;
+        slideImage.src = images[slideIndex];
+      }, 3000); // เปลี่ยนรูปทุก 3 วิ
+    }
+
+    function generateCard() {
+      const nameRaw = document.getElementById('nameInput').value.trim();
+      const msgRaw = document.getElementById('msgInput').value.trim();
+      const imgsRaw = document.getElementById('imgsInput').value.trim();
+
+      if (!nameRaw) {
+        alert('กรอกชื่อเพื่อนด้วยเว้ย!');
+        return;
+      }
+
+      const name = encodeURIComponent(nameRaw);
+      const msg = encodeURIComponent(msgRaw);
+      const imgs = imgsRaw ? imgsRaw.split(',').map(s => encodeURIComponent(s.trim())) : [];
+
+      const baseURL = window.location.origin + window.location.pathname;
+      const params = `?name=${name}&msg=${msg}&imgs=${imgs.join('%2C')}`;
+      const fullURL = baseURL + params;
+
+      const linkOutput = document.getElementById('linkOutput');
+      linkOutput.style.display = 'block';
+      linkOutput.textContent = fullURL;
+
+      const card = document.getElementById('card');
+      document.getElementById('cardName').textContent = decodeURIComponent(name);
+      document.getElementById('cardMsg').textContent = decodeURIComponent(msg) || 'สุขสันต์วันเกิดนะเว้ย!';
+      if (imgs.length > 0) {
+        clearInterval(slideTimer);
+        startSlideShow(imgs.map(decodeURIComponent));
+        document.getElementById('slideImage').style.display = 'block';
+      } else {
+        document.getElementById('slideImage').style.display = 'none';
+      }
+      card.style.display = 'block';
+    }
+
+    // แสดงหน้าอวยพรจริงตอนเปิดลิงก์
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const name = urlParams.get('name');
+      if (name) {
+        const msg = urlParams.get('msg') || 'ขอให้มึงมีความสุขมากๆ ไอสัส!';
+        const imgsParam = urlParams.get('imgs') || '';
+        const imgs = imgsParam ? imgsParam.split(',').map(s => decodeURIComponent(s)) : [];
+
+        document.body.innerHTML = `
+          <div id="birthdayContainer" style="text-align:center; padding:50px; font-family: Arial, sans-serif; background:#ffe6e6; min-height:100vh; cursor:pointer;">
+            <h1 style="font-size:3rem; color:#e60000;">HAPPY BIRTHDAY นะครับ ${name}!</h1>
+            <img id="slideImage" src="${imgs[0] || ''}" alt="รูปอวยพร" style="max-width:300px; border-radius:10px; margin: 20px auto; display:${imgs.length > 0 ? 'block' : 'none'}; height:200px; object-fit:cover; cursor:pointer;">
+            <p id="birthdayMsg" style="font-size:1.5rem; color:#990000; display:none;">${msg}</p>
+          </div>
+        `;
+
+        if (imgs.length > 1) {
+          let slideIndex = 0;
+          const slideImage = document.getElementById('slideImage');
+          setInterval(() => {
+            slideIndex = (slideIndex + 1) % imgs.length;
+            slideImage.src = imgs[slideIndex];
+          }, 3000);
+        }
+
+        const container = document.getElementById('birthdayContainer');
+        const msgElem = document.getElementById('birthdayMsg');
+        container.addEventListener('click', () => {
+          if (msgElem.style.display === 'none') {
+            msgElem.style.display = 'block';
+          } else {
+            msgElem.style.display = 'none';
+          }
+        });
+      }
+    };
+  </script>
+</body>
+</html>
